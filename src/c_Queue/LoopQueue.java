@@ -1,0 +1,103 @@
+package c_Queue;
+
+public class LoopQueue<E> implements Queue<E> {
+
+    private E[] data;
+    private int front, tail;
+    private int size; //也可以通过 front和 tail来计算出循环队列内的元素个数,不过相对复杂些
+
+    public LoopQueue(int capacity) {
+        data = (E[]) new Object[capacity + 1];  //+1是必须留的一个位置
+        front = 0;
+        tail = 0;
+        size = 0;
+    }
+
+    public LoopQueue() {
+        this(10);
+    }
+
+    @Override
+    public int getSize() {
+        return size;
+    }
+
+    public int getCapacity() {
+        return data.length - 1; //-1是把多留的一个空减去
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return front == tail;
+    }
+
+    @Override
+    public void enqueue(E e) {
+        if ((tail + 1) % data.length == front) //队列满了
+            resize(getCapacity() * 2);
+
+        data[tail] = e;
+        tail = (tail + 1) % data.length;
+        size++;
+    }
+
+    private void resize(int newCapacity) {
+        E[] newData = (E[]) new Object[newCapacity];
+        for (int i = 0; i < size; i++)
+            newData[i] = data[(i + front) % data.length];  //将旧queue的front元素直接放到新queue的0号位置  如newData[0] = data[0 + 1]% data.length
+
+        data = newData;
+        front = 0;
+        tail = size;
+    }
+
+    @Override
+    public E dequeue() {
+        if (isEmpty())
+            throw new IllegalArgumentException("Cannot dequeue from an empty queue.");
+
+        E ret = data[front];
+        data[front] = null; //手动让垃圾回收机制回收无效引用
+        front = (front + 1) % data.length;  //类似于 front ++
+        size--;
+        if (size == getCapacity() / 4 && getCapacity() / 2 != 0)
+            resize(getCapacity() / 2);
+
+        return ret;
+    }
+
+    @Override
+    public E getFront() {
+        if (isEmpty())
+            throw new IllegalArgumentException("Queue is empty.");
+        return data[front];
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder res = new StringBuilder();
+        res.append(String.format("Queue:size = %d, capacity = %d \n", size, getCapacity()));
+        res.append("front [");
+        for (int i = front; i != tail; i = (i + 1) % data.length) {
+            res.append(data[i]);
+            if ((i + 1) % data.length != tail)  //当前索引不是最后一个可用元素
+                res.append(", ");
+        }
+        res.append("] tail");
+        return res.toString();
+    }
+
+    public static void main(String[] args) {
+        LoopQueue<Integer> queue = new LoopQueue<>();
+        for (int i = 0; i < 10; i++) {
+            queue.enqueue(i);
+            System.out.println(queue);
+            if (i % 3 == 2) {
+                queue.dequeue();
+                System.out.println(queue);
+            }
+        }
+    }
+
+
+}
